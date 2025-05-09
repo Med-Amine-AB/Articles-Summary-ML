@@ -1,0 +1,695 @@
+title,content,summary
+A Beginner’s Guide to Word Embedding with Gensim Word2Vec Model,"1. Introduction of Word2vec
+
+Word2vec is one of the most popular technique to learn word embeddings using a two-layer neural network. Its input is a text corpus and its output is a set of vectors. Word embedding via word2vec can make natural language computer-readable, then further implementation of mathematical operations on words can be used to detect their similarities. A well-trained set of word vectors will place similar words close to each other in that space. For instance, the words women, men, and human might cluster in one corner, while yellow, red and blue cluster together in another.
+
+There are two main training algorithms for word2vec, one is the continuous bag of words(CBOW), another is called skip-gram. The major difference between these two methods is that CBOW is using context to predict a target word while skip-gram is using a word to predict a target context. Generally, the skip-gram method can have a better performance compared with CBOW method, for it can capture two semantics for a single word. For instance, it will have two vector representations for Apple, one for the company and another for the fruit. For more details about the word2vec algorithm, please check here.
+
+2. Gensim Python Library Introduction
+
+Gensim is an open source python library for natural language processing and it was developed and is maintained by the Czech natural language processing researcher Radim Řehůřek. Gensim library will enable us to develop word embeddings by training our own word2vec models on a custom corpus either with CBOW of skip-grams algorithms.
+
+At first, we need to install the genism package. Gensim runs on Linux, Windows and Mac OS X, and should run on any other platform that supports Python 2.7+ and NumPy. Gensim depends on the following software:
+
+Python >= 2.7 (tested with versions 2.7, 3.5 and 3.6)
+
+>= 2.7 (tested with versions 2.7, 3.5 and 3.6) NumPy >= 1.11.3
+
+>= 1.11.3 SciPy >= 0.18.1
+
+>= 0.18.1 Six >= 1.5.0
+
+>= 1.5.0 smart_open >= 1.2.1
+
+There are two ways for installation. We could run the following code in our terminal to install genism package.
+
+pip install --upgrade gensim
+
+Or, alternatively for Conda environments:
+
+conda install -c conda-forge gensim
+
+3. Implementation of word Embedding with Gensim Word2Vec Model
+
+In this tutorial, I will show how to generate word embedding with genism using a concrete example. The dataset I used for this tutorial is from Kaggle Dataset.
+
+This vehicle dataset includes features such as make, model, year, engine, and other properties of the car. We will use these features to generate the word embeddings for each make model and then compare the similarities between different make model. The full python tutorial can be found here.
+
+>>> df = pd.read_csv('data.csv')
+
+>>> df.head()
+
+3.1 Data Preprocessing:
+
+Since the purpose of this tutorial is to learn how to generate word embeddings using genism library, we will not do the EDA and feature selection for the word2vec model for the sake of simplicity.
+
+Genism word2vec requires that a format of ‘list of lists’ for training where every document is contained in a list and every list contains lists of tokens of that document. At first, we need to generate a format of ‘list of lists’ for training the make model word embedding. To be more specific, each make model is contained in a list and every list contains lists of features of that make model.
+
+To achieve this, we need to do the following things :
+
+a. Create a new column for Make Model
+
+>>> df['Maker_Model']= df['Make']+ "" "" + df['Model']
+
+b. Generate a format of ‘ list of lists’ for each Make Model with the following features: Engine Fuel Type, Transmission Type, Driven_Wheels, Market Category, Vehicle Size, Vehicle Style.
+
+# Select features from original dataset to form a new dataframe
+
+>>> df1 = df[['Engine Fuel Type','Transmission Type','Driven_Wheels','Market Category','Vehicle Size', 'Vehicle Style', 'Maker_Model']] # For each row, combine all the columns into one column
+
+>>> df2 = df1.apply(lambda x: ','.join(x.astype(str)), axis=1) # Store them in a pandas dataframe
+
+>>> df_clean = pd.DataFrame({'clean': df2}) # Create the list of list format of the custom corpus for gensim modeling
+
+>>> sent = [row.split(',') for row in df_clean['clean']] # show the example of list of list format of the custom corpus for gensim modeling
+
+>>> sent[:2]
+
+[['premium unleaded (required)',
+
+'MANUAL',
+
+'rear wheel drive',
+
+'Factory Tuner',
+
+'Luxury',
+
+'High-Performance',
+
+'Compact',
+
+'Coupe',
+
+'BMW 1 Series M'],
+
+['premium unleaded (required)',
+
+'MANUAL',
+
+'rear wheel drive',
+
+'Luxury',
+
+'Performance',
+
+'Compact',
+
+'Convertible',
+
+'BMW 1 Series']]
+
+3.2. Genism word2vec Model Training
+
+We can train the genism word2vec model with our own custom corpus as following:
+
+>>> model = Word2Vec(sent, min_count=1,size= 50,workers=3, window =3, sg = 1)
+
+Let’s try to understand the hyperparameters of this model.
+
+size: The number of dimensions of the embeddings and the default is 100.
+
+window: The maximum distance between a target word and words around the target word. The default window is 5.
+
+min_count: The minimum count of words to consider when training the model; words with occurrence less than this count will be ignored. The default for min_count is 5.
+
+workers: The number of partitions during training and the default workers is 3.
+
+sg: The training algorithm, either CBOW(0) or skip gram(1). The default training algorithm is CBOW.
+
+After training the word2vec model, we can obtain the word embedding directly from the training model as following.
+
+>>> model['Toyota Camry'] array([-0.11884457, 0.03035539, -0.0248678 , -0.06297892, -0.01703234,
+
+-0.03832747, -0.0825972 , -0.00268112, -0.09192555, -0.08458661,
+
+-0.07199778, 0.05235871, 0.21303181, 0.15767808, -0.1883737 ,
+
+0.01938575, -0.24431638, 0.04261152, 0.11865819, 0.09881561,
+
+-0.04580643, -0.08342388, -0.01355413, -0.07892415, -0.08467747,
+
+-0.0040625 , 0.16796461, 0.14578669, 0.04187112, -0.01436194,
+
+-0.25554284, 0.25494182, 0.05522631, 0.19295982, 0.14461821,
+
+0.14022525, -0.2065216 , -0.05020927, -0.08133671, 0.18031682,
+
+0.35042757, 0.0245426 , 0.15938364, -0.05617865, 0.00297452,
+
+0.15442047, -0.01286271, 0.13923576, 0.085941 , 0.18811756],
+
+dtype=float32)
+
+4. Compute Similarities
+
+Now we could even use Word2vec to compute the similarity between two Make Models in the vocabulary by invoking the model.similarity( ) and passing in the relevant words. For instance, model.similarity(‘Porsche 718 Cayman’, ‘Nissan Van’) This will give us the Euclidian similarity between Porsche 718 Cayman and Nissan Van.
+
+>>> model.similarity('Porsche 718 Cayman', 'Nissan Van')
+
+0.822824584626184 >>> model.similarity('Porsche 718 Cayman', 'Mercedes-Benz SLK-Class')
+
+0.961089779453727
+
+From the above examples, we can tell that Porsche 718 Cayman is more similar to Mercedes-Benz SLK-Class than Nissan Van. We also can use the built-in function model.most_similar() to get a set of the most similar make models for a given make model based on the Euclidean distance.
+
+>>> model1.most_similar('Mercedes-Benz SLK-Class')[:5] [('BMW M4', 0.9959905743598938),
+
+('Maserati Coupe', 0.9949707984924316),
+
+('Porsche Cayman', 0.9945154190063477),
+
+('Mercedes-Benz SLS AMG GT', 0.9944609999656677),
+
+('Maserati Spyder', 0.9942780137062073)]
+
+However, Euclidian similarity cannot work well for the high-dimensional word vectors. This is because Euclidian similarity will increase as the number of dimensions increases, even if the word embedding stands for different meanings. Alternatively, we can use cosine similarity to measure the similarity between two vectors. Mathematically, it measures the cosine of the angle between two vectors projected in a multi-dimensional space. The cosine similarity captures the angle of the word vectors and not the magnitude. Under cosine similarity, no similarity is expressed as a 90-degree angle while the total similarity of 1 is at a 0-degree angle.
+
+The following function shows how can we generate the most similar make model based on cosine similarity.
+
+def cosine_distance (model, word,target_list , num) :
+
+cosine_dict ={}
+
+word_list = []
+
+a = model[word]
+
+for item in target_list :
+
+if item != word :
+
+b = model [item]
+
+cos_sim = dot(a, b)/(norm(a)*norm(b))
+
+cosine_dict[item] = cos_sim
+
+dist_sort=sorted(cosine_dict.items(), key=lambda dist: dist[1],reverse = True) ## in Descedning order
+
+for item in dist_sort:
+
+word_list.append((item[0], item[1]))
+
+return word_list[0:num] # only get the unique Maker_Model
+
+>>> Maker_Model = list(df.Maker_Model.unique()) # Show the most similar Mercedes-Benz SLK-Class by cosine distance
+
+>>> cosine_distance (model,'Mercedes-Benz SLK-Class',Maker_Model,5) [('Mercedes-Benz CLK-Class', 0.99737006),
+
+('Aston Martin DB9', 0.99593246),
+
+('Maserati Spyder', 0.99571854),
+
+('Ferrari 458 Italia', 0.9952333),
+
+('Maserati GranTurismo Convertible', 0.994994)]
+
+5. T-SNE Visualizations
+
+It’s hard to visualize the word embedding directly, for they usually have more than 3 dimensions. T-SNE is a useful tool to visualize high-dimensional data by dimension reduction while keeping relative pairwise distance between points. It can be said that T-SNE looking for a new data representation where the neighborhood relations are preserved. The following code shows how to plot the word embedding with T-SNE plot.
+
+def display_closestwords_tsnescatterplot(model, word, size):
+
+
+
+arr = np.empty((0,size), dtype='f')
+
+word_labels = [word] close_words = model.similar_by_word(word) arr = np.append(arr, np.array([model[word]]), axis=0)
+
+for wrd_score in close_words:
+
+wrd_vector = model[wrd_score[0]]
+
+word_labels.append(wrd_score[0])
+
+arr = np.append(arr, np.array([wrd_vector]), axis=0)
+
+
+
+tsne = TSNE(n_components=2, random_state=0)
+
+np.set_printoptions(suppress=True)
+
+Y = tsne.fit_transform(arr) x_coords = Y[:, 0]
+
+y_coords = Y[:, 1]
+
+plt.scatter(x_coords, y_coords) for label, x, y in zip(word_labels, x_coords, y_coords):
+
+plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
+
+plt.xlim(x_coords.min()+0.00005, x_coords.max()+0.00005)
+
+plt.ylim(y_coords.min()+0.00005, y_coords.max()+0.00005)
+
+plt.show() >>> display_closestwords_tsnescatterplot(model, 'Porsche 718 Cayman', 50)
+
+This T-SNE plot shows the top 10 similar vehicles to the Porsche 718 Cayman in two-dimensional space.
+
+About Me
+
+I am a master student in Data Science at the University of San Francisco. I am passionate about using Machine Learning to solve business challenges. You can also find me through Linkedin.","At first, we need to generate a format of ‘list of lists’ for training the make model word embedding. After training the word2vec model, we can obtain the word embedding directly from the training model as following. Implementation of word Embedding with Gensim Word2Vec Model
+
+In this tutorial, I will show how to generate word embedding with genism using a concrete example."
+Hands-on Graph Neural Networks with PyTorch & PyTorch Geometric,"In my last article, I introduced the concept of Graph Neural Network (GNN) and some recent advancements of it. Since this topic is getting seriously hyped up, I decided to make this tutorial on how to easily implement your Graph Neural Network in your project. You will learn how to construct your own GNN with PyTorch Geometric, and how to use GNN to solve a real-world problem (Recsys Challenge 2015).
+
+In this blog post, we will be using PyTorch and PyTorch Geometric (PyG), a Graph Neural Network framework built on top of PyTorch that runs blazingly fast. It is several times faster than the most well-known GNN framework, DGL.
+
+Aside from its remarkable speed, PyG comes with a collection of well-implemented GNN models illustrated in various papers. Therefore, it would be very handy to reproduce the experiments with PyG.","In this blog post, we will be using PyTorch and PyTorch Geometric (PyG), a Graph Neural Network framework built on top of PyTorch that runs blazingly fast. In my last article, I introduced the concept of Graph Neural Network (GNN) and some recent advancements of it. You will learn how to construct your own GNN with PyTorch Geometric, and how to use GNN to solve a real-world problem (Recsys Challenge 2015)."
+How to Use ggplot2 in Python,"Introduction
+
+Thanks to its strict implementation of the grammar of graphics, ggplot2 provides an extremely intuitive and consistent way of plotting your data. Not only does ggplot2’s approach to plotting ensure that each plot comprises certain basic elements but it also simplifies the readability of your code to a great extent.
+
+However, if you are a frequent user of Python, then implementing the grammar of graphics can be extremely challenging due to the lack of standardized syntax in popular plotting libraries, such as matplotlib or seaborn. Should you still want to make use of the grammar of graphics, then the Python package plotnine provides an alternative for you.
+
+The Grammar of Graphics
+
+In case you should be unfamiliar with the grammar of graphics, here is a quick overview:
+
+Main Components of the Grammar of Graphics
+
+As you can see, there are several components that make up the grammar of graphics, starting with your data. After identifying the data you would like to visualize, you have to specify the variables you are interested in. For instance, you might want to display one variable on the x-axis and another on the y-axis. Third, you have to define what type of geometric object (geom for short) you would like to utilize. This could be anything from a bar plot to a scatter plot or any of the other existing plot types.
+
+These first three components are compulsory. Without data, there is nothing to plot. Without axis definitions, there is nothing to plot either. And finally, without defining a geometric object, you will only see an empty coordinate system. The remaining components making up the grammar of graphics are optional and can be implemented to improve visualizations. Facets refer to specifications of subplots, that is, plotting several variables within your data next to one another in separate plots. Statistical transformations mainly refer to the inclusion of summary statistics in your plot, such as the median or percentiles. Coordinates describe the different coordinate systems available to you. The most used and default coordinate system is the Cartesian coordinate system. Depending on the structure of the data you would like to plot, lesser used coordinate systems, such as the Polar coordinate system, might provide a better way of visualizing your data. Finally, themes provide a variety of options to design all non-data elements of your plot, such as the legend, background, or annotations.
+
+While there are many ways of visualizing the grammar of graphics, I particularly like the one I created above because it implies the additivity of these layers as well as the fact that they are building upon one another. If you have ever used ggplot2, you are familiar with the ‘+’ in its syntax that symbolizes the same idea described above.
+
+plotnine
+
+plotnine is a Python package allowing you to use ggplot2-like code that is implementing the grammar of graphics. By doing so, just as in ggplot2, you are able to specifically map data to visual objects that make up the visualization. This enables you to improve both the readability as well as the structure of your code. While you could set matplotlib’s style to ggplot, you cannot implement the grammar of graphics in matplotlib the same way you can in ggplot2.
+
+Installation
+
+Before getting started, you have to install plotnine. As always, there are two main options for doing so: pip and conda.
+
+Plotting
+
+Having installed plotnine, you can get started plotting using the grammar of graphics. Let us begin by building a very simple plot only using the three requisite components: data, aesthetics, and geometric objects.
+
+Building a plot using the grammar of graphics
+
+As you can see, the syntax is very similar to ggplot2. First, we specify the data source. In our case, the data we are using is the classic mpg data set. Next, we define that the variable ‘class’ is going to be displayed on the x-axis. Lastly, we say that we would like to use a bar plot with bars of size 20 to visualize our data. Let us look at the complete code and the resulting plot:
+
+The code above will yield the following output:
+
+While this is a good start, it is not very nice to look at yet. Let us use other components of the grammar of graphics to beautify our plot.
+
+For instance, we could flip the axes using coord_flip() and customize the plot and axes titles with labs() to improve our plot. Using the code chunk above, our plot would look like this:
+
+Plotting Multidimensional Data
+
+Besides basic plots, you can do almost everything you could otherwise do in ggplot2, such as plotting multidimensional data. If you would like to visualize the relationships between three variables you could add aesthetics to an otherwise two-dimensional plot:
+
+Adding color to the aesthetics will prompt plotnine to display a two-dimensional plot using displ (engine displacement, in liters) on its x- and hwy (highway miles per gallon) on its y-axis and color the data according to the variable class. We have also switched the geometric object to geom_point(), which will give us a scatter instead of a bar plot. Let us take a look at what that would look like:
+
+Conclusion
+
+As you can see, plotnine provides you with the ability to utilize the grammar of graphics within Python. This increases the readability of your code and allows you to specifically map parts of your data to visual objects. If you are already familiar with ggplot2, then you won’t have to learn anything new to master plotnine. If not, here is a link to the ggplot2 website on which you can find out plenty more about the grammar of graphics and all types of geometric objects available to you.","The Grammar of Graphics
+
+In case you should be unfamiliar with the grammar of graphics, here is a quick overview:
+
+Main Components of the Grammar of Graphics
+
+As you can see, there are several components that make up the grammar of graphics, starting with your data. Building a plot using the grammar of graphics
+
+As you can see, the syntax is very similar to ggplot2. Let us use other components of the grammar of graphics to beautify our plot."
+Databricks: How to Save Data Frames as CSV Files on Your Local Computer,"Photo credit to Mika Baumeister from Unsplash
+
+When I work on Python projects dealing with large datasets, I usually use Spyder. The environment of Spyder is very simple; I can browse through working directories, maintain large code bases and review data frames I create. However, if I don’t subset the large data, I constantly face memory issues and struggle with very long computational time. For this reason, I occasionally use Databricks. Databricks is a Microsoft Azure platform where you can easily parse large amounts of data into “notebooks” and perform Apache Spark-based analytics.
+
+If you want to work with data frames and run models using pyspark, you can easily refer to Databricks’ website for more information. However, while working on Databricks, I noticed that saving files in CSV, which is supposed to be quite easy, is not very straightforward. In the following section, I would like to share how you can save data frames from Databricks into CSV format on your local computer with no hassles.
+
+1. Explore the Databricks File System (DBFS)
+
+From Azure Databricks home, you can go to “Upload Data” (under Common Tasks)→ “DBFS” → “FileStore”.
+
+DBFS FileStore is where you create folders and save your data frames into CSV format. By default, FileStore has three folders: import-stage, plots, and tables.
+
+2. Save a data frame into CSV in FileStore
+
+Sample.coalesce(1).write.format(“com.databricks.spark.csv”).option(“header”, “true”).save(“dbfs:/FileStore/df/Sample.csv”)
+
+Using the above code on the notebook, I created a folder “df” and saved a data frame “Sample” into CSV. It is important to use coalesce(1) since it saves the data frame as a whole. At the end of this article, I will also demonstrate what happens when you don’t include coalesce(1) in the code.","DBFS FileStore is where you create folders and save your data frames into CSV format. Save a data frame into CSV in FileStore
+
+Sample.coalesce(1).write.format(“com.databricks.spark.csv”).option(“header”, “true”).save(“dbfs:/FileStore/df/Sample.csv”)
+
+Using the above code on the notebook, I created a folder “df” and saved a data frame “Sample” into CSV. Explore the Databricks File System (DBFS)
+
+From Azure Databricks home, you can go to “Upload Data” (under Common Tasks)→ “DBFS” → “FileStore”."
+A Step-by-Step Implementation of Gradient Descent and Backpropagation,"A Step-by-Step Implementation of Gradient Descent and Backpropagation
+
+The original intention behind this post was merely me brushing upon mathematics in neural network, as I like to be well versed in the inner workings of algorithms and get to the essence of things. I then think I might as well put together a story rather than just revisiting the formulas on my notepad over and over. Though you might find a number of tutorials for building a simple neural network from scratch. Different people have varied angles of seeing things as well as the emphasis of study. Another way of thinking might in some sense enhance understanding. So let’s dive in.
+
+Photo from Unsplash
+
+Neural network in a nutshell
+
+The core of neural network is a big function that maps some input to the desired target value, in the intermediate step does the operation to produce the network, which is by multiplying weights and add bias in a pipeline scenario that does this over and over again. The process of training a neural network is to determine a set of parameters that minimize the difference between expected value and model output. This is done using gradient descent (aka backpropagation), which by definition comprises two steps: calculating gradients of the loss/error function, then updating existing parameters in response to the gradients, which is how the descent is done. This cycle is repeated until reaching the minima of the loss function. This learning process can be described by the simple equation: W(t+1) = W(t) — dJ(W)/dW(t).
+
+The mathematical intuition
+
+Photo from https://blog.goodaudience.com/artificial-neural-networks-explained-436fcf36e75
+
+For my own practice purpose, I like to use a small network with a single hidden layer as in the diagram. In this layout, X represents input, subscripts i, j, k denote the number of units in the input, hidden and output layers respectively; w_ij represents the weights connecting input to hidden layer, and w_jk is the weights connecting hidden to output layer.
+
+The model output calculation, in this case, would be:
+
+Often the choice of the loss function is the sum of squared error. Here I use sigmoid activation function and assume bias b is 0 for simplicity, meaning weights are the only variables that affect model output. Let’s derive the formula for calculating gradients of hidden to output weights w_jk.
+
+The complexity of determining input to hidden weights is that it affects output error indirectly. Each hidden unit output affects model output, thus input to hidden weights w_ij depend on the errors at all of the units it is connected to. The derivation starts the same, just to expand the chain rule at z_k to the subfunction.
+
+More thoughts:
+
+Notice that the gradients of the two weights have a similar form. The error is backpropagated via the derivative of activation function, then weighted by the input (the activation output) from the previous layer. In the second formula, the backpropagated error from the output layer is further projected onto w_jk, then repeat the same way of backpropagation and weighted by the input. This backpropagating process is iterated all the way back to the very first layer in an arbitrary-layer neural network. “The gradients with respect to each parameter are thus considered to be the contribution of the parameter to the error and should be negated during learning.”
+
+Putting the above process into code:
+
+Below is the complete example:
+
+import numpy as np class NeuralNetwork:
+
+def __init__(self):
+
+np.random.seed(10) # for generating the same results
+
+self.wij = np.random.rand(3,4) # input to hidden layer weights
+
+self.wjk = np.random.rand(4,1) # hidden layer to output weights
+
+
+
+def sigmoid(self, x, w):
+
+z = np.dot(x, w)
+
+return 1/(1 + np.exp(-z))
+
+
+
+def sigmoid_derivative(self, x, w):
+
+return self.sigmoid(x, w) * (1 - self.sigmoid(x, w))
+
+
+
+def gradient_descent(self, x, y, iterations):
+
+for i in range(iterations):
+
+Xi = x
+
+Xj = self.sigmoid(Xi, self.wij)
+
+yhat = self.sigmoid(Xj, self.wjk)
+
+# gradients for hidden to output weights
+
+g_wjk = np.dot(Xj.T, (y - yhat) * self.sigmoid_derivative(Xj, self.wjk))
+
+# gradients for input to hidden weights
+
+g_wij = np.dot(Xi.T, np.dot((y - yhat) * self.sigmoid_derivative(Xj, self.wjk), self.wjk.T) * self.sigmoid_derivative(Xi, self.wij))
+
+# update weights
+
+self.wij += g_wij
+
+self.wjk += g_wjk
+
+print('The final prediction from neural network are: ')
+
+print(yhat) if __name__ == '__main__':
+
+neural_network = NeuralNetwork()
+
+print('Random starting input to hidden weights: ')
+
+print(neural_network.wij)
+
+print('Random starting hidden to output weights: ')
+
+print(neural_network.wjk)
+
+X = np.array([[0, 0, 1], [1, 1, 1], [1, 0, 1], [0, 1, 1]])
+
+y = np.array([[0, 1, 1, 0]]).T
+
+neural_network.gradient_descent(X, y, 10000)
+
+References:","Let’s derive the formula for calculating gradients of hidden to output weights w_jk. In this layout, X represents input, subscripts i, j, k denote the number of units in the input, hidden and output layers respectively; w_ij represents the weights connecting input to hidden layer, and w_jk is the weights connecting hidden to output layer. Each hidden unit output affects model output, thus input to hidden weights w_ij depend on the errors at all of the units it is connected to."
+An Easy Introduction to SQL for Data Scientists,"Want to be inspired? Come join my Super Quotes newsletter. 😎
+
+SQL (Structured Query Language) is a standardised programming language designed for data storage and management. It allows one to create, parse, and manipulate data fast and easy.
+
+With the AI-hype of recent years, technology companies serving all kinds of industries have been forced to become more data driven. When a company that serves thousands of customers is data driven, they’ll need a way to store and frequently access data on the order of millions or even billions of data points.
+
+That’s where SQL comes in.
+
+SQL is popular because it’s both fast and easy to understand. It’s designed to be read and written in a similar way to the English language. When an SQL query is used to retrieve data, that data is not copied anywhere, but instead accessed directly where it’s stored making the process much faster than other approaches.
+
+This tutorial will teach you the basics of SQL including:
+
+Creating database tables
+
+Populating the database tables with real data
+
+Retrieving your data for usage in a Data Science or Machine Learning task
+
+Let’s jump right into it!
+
+Installing MySQL
+
+The first thing we’ll do is actually install our SQL server! That’ll give us a workbench to start playing around with databases and SQL queries.
+
+To install a MySQL server, you can run the following command from your terminal:
+
+sudo apt-get install mysql-server
+
+Now we’ll start our MySQL server. This is similar to how we start Python in the terminal by just typing out “python”. The only difference here is that it’s convenient to give our server root privileges so we’ll have flexible access to everything.
+
+sudo mysql -u root -p
+
+Great! Now our mysql server is running and we can start issuing MySQL commands.
+
+A couple of things to keep in mind before we move forward:","To install a MySQL server, you can run the following command from your terminal:
+
+sudo apt-get install mysql-server
+
+Now we’ll start our MySQL server. Installing MySQL
+
+The first thing we’ll do is actually install our SQL server! 😎
+
+SQL (Structured Query Language) is a standardised programming language designed for data storage and management."
+Hypothesis testing visualized,"Hypothesis testing visualized
+
+In this article, we’ll get an intuitive, visual feel for hypothesis testing. While there are many articles online that explain it in words, there aren’t nearly enough that rely primarily on visuals; which is surprising since the subject lends itself quite well to exposition through pictures and movies.
+
+But before getting too far ahead of ourselves, let’s briefly describe what it even is.
+
+What is
+
+Best to start with an example of a hypothesis test before describing it generally. The first thing we need is a hypothesis. For example, we could hypothesize that the average height of men is greater than the average height of women. In the spirit of ‘proof by contradiction’, we first assume that there is no difference between the average heights of the two genders. This becomes our default, or null hypothesis. If we collect data on the heights of the two groups and find that it is extremely unlikely to have observed this data if the null hypotheses were true (for example, “if the null is true, why do I see such a big difference between the average male and female heights in my samples?”), we can reject it and conclude there is indeed a difference.
+
+For a general hypothesis testing problem, we need the following:
+
+A metric we care about (average height in the example above). Two (or more) groups which are different from each other in some known way (males and females in the example above). A null hypothesis that the metric is the same across our groups, so any difference we observe in our collected data must merely be statistical noise and an alternate hypothesis which says there is indeed some difference.
+
+We can then proceed to collect data for the two groups, estimate the metric of interest for them and see how compatible our data is with our null and alternate hypothesis. The last part is where the theory of hypothesis testing comes in. We’ll literally see how it works in the proceeding sections.
+
+How to reject
+
+Now that we’ve formed our hypothesis and collected our data, how do we use it to reject our null? The general framework is as follows:","For a general hypothesis testing problem, we need the following:
+
+A metric we care about (average height in the example above). If we collect data on the heights of the two groups and find that it is extremely unlikely to have observed this data if the null hypotheses were true (for example, “if the null is true, why do I see such a big difference between the average male and female heights in my samples?”), we can reject it and conclude there is indeed a difference. We can then proceed to collect data for the two groups, estimate the metric of interest for them and see how compatible our data is with our null and alternate hypothesis."
+Introduction to Latent Matrix Factorization Recommender Systems,"Latent Factors are “Hidden Factors” unseen in the data set. Let’s use their power. Image URL: https://www.3dmgame.com/games/darknet/tu/
+
+Latent Matrix Factorization is an incredibly powerful method to use when creating a Recommender System. Ever since Latent Matrix Factorization was shown to outperform other recommendation methods in the Netflix Recommendation contest, its been a cornerstone in building Recommender Systems. This article will aim to give you some intuition for when to use Latent Matrix Factorization for Recommendation, while also giving some intuition behind why it works. If you’d like to see a full implementation, you can go to my Kaggle kernel: Probabilistic Matrix Factorization.
+
+Before starting, let’s first review the problem we’re trying to solve. Latent Matrix Factorization is an algorithm tackling the Recommendation Problem: Given a set of m users and n items, and set of ratings from user for some items, try to recommend the top items for each user. There are many flavors and alternate deviations of this problem, most of which add more dimensions to the problem, like adding tags. What makes Latent Matrix Factorization powerful is that it yields really strong results from the core problem, and can be a good foundation to build from.
+
+When working with an User-Item matrix of ratings, and reading an article on matrix factorization, the first place to look is in linear algebra. That intuition is correct, but its not exactly what you’d expect.
+
+Sparse and Incomplete Matrix Algebra:
+
+Traditional Linear Algebra is the bedrock of Machine Learning, and that is because most machine learning applications have something Recommender Systems do not: a data-set without NaNs(incomplete data entries). For example, whenever you’re constructing a model, NaNs, or missing data, are pruned in the data pre-processing step, as most functions cannot work with unfilled values. Functions like Principal Component Analysis are undefined if there are missing values. However, Recommender Systems cannot work if you get rid of NaNs. Those NaNs exist for a reason: not every user has rated every item, and its a bit nonsensical to expect them to. Working with Sparse data is something that can be very different — and that’s what makes Recommendation an interesting problem.
+
+Sparsity complicates matters. Singular Value Decomposition, a factorization of a m x n Matrix into its singular and orthogonal values, is undefined if any of the entries in the Matrix are undefined. This means we cannot explicitly factorize the Matrix in such a way where we can find which we can find which diagonal(or latent) factors carry the most weight in the data set.
+
+Instead, we’re going to approximate the best factorization of the Matrix, using a technique called Probabilistic Matrix Factorization. This technique is accredited to Simon Funk who used this technique in his FunkSVD algorithm to get very successful in the Netflix contest. For more reading, check out Simon’s original post.
+
+The Approach:
+
+I’ll explain the algorithm, then explain the intuition.
+
+We’ll first initialize two matrices from a Gaussian Distribution(alternatively, randomly initialize them). The first one will be a m x k matrix P while the second will be a k x n matrix Q. When these two matrices multiply with each other, they result in an m x n matrix, which is exactly the size of our Rating matrix in which we are trying to predict. The dimension k is one of our hyper-parameters, which represents the amount of latent factors we’re using to estimate the ratings matrix. Generally, k is between 10–250, but don’t take my word for it — use a line search(or grid search) to find the optimal value for your application.
+
+With our Matrices P, Q, we’ll optimize their values by using Stochastic Gradient Descent. Therefore, you’ll have two more hyper-parameters to optimize, learning rate and epochs. For each Epoch, we’re going to iterate through every known rating in our original m x n matrix.
+
+Then, we’ll get a error or residual value e by subtracting the original rating value by the dot product of the original ratings’ user’s row in P and its item’s column in Q.
+
+In normal Stochastic Gradient Descent fashion, we’ll update both of the matrices P and Q simultaneously by adding the current row for P and Q by the learning rate times the product of the error times the other Matrix’s values.
+
+Here it is in python. View it fully in my Kaggle Kernel.
+
+#randomly initialize user/item factors from a Gaussian
+
+P = np.random.normal(0,.1,(train.n_users,self.num_factors))
+
+Q = np.random.normal(0,.1,(train.n_items,self.num_factors))
+
+#print('fit') for epoch in range(self.num_epochs):
+
+for u,i,r_ui in train.all_ratings():
+
+residual = r_ui - np.dot(P[u],Q[i])
+
+temp = P[u,:] # we want to update them at the same time, so we make a temporary variable.
+
+P[u,:] += self.alpha * residual * Q[i]
+
+Q[i,:] += self.alpha * residual * temp self.P = P
+
+self.Q = Q self.trainset = train
+
+
+
+Now that we have the algorithm, why does it work and how do we interpret it’s results?
+
+Latent factors represent categories that are present in the data. For k=5 latent factors for a movie data-set, those could represent action, romance, sci-fi, comedy, and horror. With a higher k, you have more specific categories. Whats going is we are trying to predict a user u’s rating of item i. Therefore, we look at P to find a vector representing user u, and their preferences or “affinity” toward all of the latent factors. Then, we look at Q to find a vector representing item i and it’s “affinity” toward all the latent factors. We get the dot product of these two vectors, which will return us a sense of how much the user likes the item in context of the latent factors.","When working with an User-Item matrix of ratings, and reading an article on matrix factorization, the first place to look is in linear algebra. When these two matrices multiply with each other, they result in an m x n matrix, which is exactly the size of our Rating matrix in which we are trying to predict. Therefore, we look at P to find a vector representing user u, and their preferences or “affinity” toward all of the latent factors."
+Which 2020 Candidate is the Best at Twitter?,"Which 2020 Candidate is the Best at Twitter?
+
+The contest for the 2020 Democratic party nomination will be fought in many arenas. Before the first debates in a month, before the campaign rallies in key states, and even before prime time TV interviews, the fight for the nomination has begun on Twitter. Each of the major Democratic candidates has a signifiant social media following. With these accounts, the candidates have the means to directly communicate to voters, the media, and the world. After all, we’ve seen that carefully crafted tweets can change narratives in the real world.
+
+Knowing this, I decided to collect all of the tweets from 11 of the top Democratic candidates for president. Three of these contenders have separate work accounts, so in total 14 profiles were analyzed. With this data, it’s possible to see which candidates make the best use of this new and powerful platform.
+
+Twitter Statistics
+
+Followers
+
+The candidate with the most Twitter followers is definely Bernie Sanders. Between his senate (@SenSanders) and personal (@BernieSanders) accounts, Sanders has over 17 million followers. No doubt some of these overlap, but it goes to show that his 2016 campaign created a massive social media following. Elizabeth Warren’s senate account is a distant third, while Cory Booker, Joe Biden, and Kamala Harris are also followed by multiple millions of people.
+
+The follower count can best be seen as measure of the potential influence of a candidate online. The actual effectiveness of a large following depends on how good the candidate is at communicating.
+
+Number of Tweets
+
+If a follower count is like potential energy, then the number of tweets issued is analogous to kinetic energy. In this respect, Andrew Yang is the most energetic and also the most prolific of the 2020 candidates. With almost 3000 tweets in 2019, Yang uses social media far more than his peers. He is the one contender who probably leverages this…","Which 2020 Candidate is the Best at Twitter? Each of the major Democratic candidates has a signifiant social media following. Twitter Statistics
+
+Followers
+
+The candidate with the most Twitter followers is definely Bernie Sanders."
+What if AI model understanding were easy?,"Irreverent Demystifiers
+
+What if AI model understanding were easy?
+
+Let’s talk about the What-If Tool, as in “What if getting a look at your model performance and data during ML/AI development weren’t such a royal pain in the butt?” (Or ignore my chatter and scroll straight to the walkthrough screenshots below!)
+
+Why bother with analytics for AI?
+
+Being able to get a grip on your progress is the key to speedy iteration towards an awesome ML/AI solution, so good tools designed for analysts working in the machine learning space help them help you meet ambitious targets and catch problems like AI bias before it hurts your users.
+
+The What-If Tool is for speedy machine learning analytics, built to accelerate iterative model development and training.
+
+Analytics is not about proving anything, so this tool won’t help with that. Instead, it’ll help you discover the unknown unknowns in your data faster. Learn more about explainable AI (XAI) and its limitations here.
+
+About the What-If Tool
+
+The What-If Tool is for speedy machine learning analytics, built to accelerate iterative model development and training. The first version (released in late 2018) was pretty, but you couldn’t use it unless you were all-in on TensorFlow. As someone who appreciates the expediency of tools like Scikit Learn, I’m delighted that What-If Tool is now geared at all analysts working with models in Python.
+
+No more TensorFlow exclusivity!
+
+We’ve been incorporating feedback from internal and external users to make the tool awesome for data scientists, researchers, and corporate megateams alike. Learn more about our UX journey here. Without further ado, let me make myself a hexpresso and play with the most current version to give you my take on what’s awesome and what’s awful.
+
+What’s awesome about the What-If Tool?
+
+Easy to use and versatile
+
+In the current version of What-If Tool, we expanded access to the magic beyond TensorFlow afficionados. Yes, that’s right — no more TF-exclusivity! This is model understanding and quick data exploration for feature selection/preprocessing insights even if you’re allergic to TensorFlow. Want to compare models made in Scikit Learn or PyTorch? Step right up! Does it work with standard Jupyter notebooks? You bet! It also works with Colaboratory because we know you prefer to choose your weapon. The tool is designed to reduce the amount of code you need to write to get your eyes on your data, so it’s built for ease of use.
+
+In this screenshot, we’re using the tool to compare two classifiers (deep neural network on the x-axis, linear model on the y-axis) trained on the UCI Census Income Dataset to predict whether someone will earn more than $50,000 a year. Numbers closer to 1 indicate that a model is giving a stronger YES vote. The scatterplot shows the votes of one model versus the other. See the notebook here and play with it yourself if you’re feeling curious — no install required.
+
+As expected, there’s a positive correlation but the models don’t give identical results. (Working as intended! They’re different models, after all.) If I’m curious about how the model votes are related to, say marital status, it’s very easy to find out — simply select that feature from the dropdown menu.
+
+Voilà! Most of our dataset shows civil marriages and we see an interesting preponderance of other statuses where the models disagree with one another or both vote a strong no. Remember, this is analytics, so don’t jump to conclusions beyond our current dataset!
+
+The What-If Tool is not going to give you every slice of every view of every way that you might want to explore your data. But it’s great at what it’s designed for: a first start with low effort. It also works on a subsample, which means you get a quick look quickly without having to pay the memory cost to ingest and process all your data if you don’t want to. Huzzah for speed!
+
+It’s great at what it’s designed for: a first look with low effort.
+
+Fighting AI bias
+
+The What-If Tool is also your secret weapon for fighting AI bias. To understand why, check out my discussion of AI bias here. Its bias-catching features are not an accident — a large fraction of the project’s core team hails from Google Brain’s PAIR initiative aimed at human-centered research and design to make AI partnerships productive, enjoyable, and fair.
+
+In the fairness tab, we can play with all kinds of uncomfortable questions. For example, we can find out where we’d have to set our classification thresholds (the ones you’d naively want to put at 50%) for males vs females in our test set to achieve demographic parity between them. Uh-oh.
+
+Smarter ML/AI iteration
+
+The What-If Tool incorporates the Facets tool, which tackles the data analytics piece without the model understanding component.
+
+In the features tab, I can get a quick look at histograms to show me how my features are distributed. Oh my goodness, capital loss is a super imbalanced feature with only ~4% nonzero values. I’m already itching to try dropping it and rerunning both models. If you’ve been around the block a few times (or studied the math) you’ll know that putting something like that in a linear model is bad news indeed. I see similar trouble with capital gains. (If you insist on using ’em, how about doing some light feature engineering to combine them? Minuses are awesome.) Ah, and here’s a question for the more advanced analysts among you: can you see why optimizing for accuracy should make us very nervous?
+
+What-If puts both together to help you iterate smartly. Think of it like this: to figure out what to do next in the kitchen, you want a handy way to compare the tastiness of several potential recipes (with model understanding) and also getting a handle on what’s in your grocery bags (with data analytics) so you don’t accidentally use rotten tomatoes. Facets gave you eyes on your ingredients, while the What-If Tool goes a step further to deliver that plus the recipe comparison. If you’ve been cooking blindly, you’ll love this tool for iterative model development and training.
+
+Exploring counterfactuals
+
+Never underestimate the power of being able to ask your own what-if questions, like “What if we raise this person’s work hours and change their gender? How does the model react?” The What-If Tool is purpose-built to give you more of a grip on guided what-if/counterfactual questions. The tool makes it easy to see how the prediction changes if you vary a variable (finally!) over its domain and shows you whether there’s some value where the prediction behaves in a suspicious way and letting you see exactly where the classification flips from, say, NO to YES. Try playing with the counterfactual options to find a datapoint’s most similar counterpart in a different predicted class. It’s a great way to see the effects of subtle differences on your model’s output.
+
+Back to our first tab. That red point I’ve selected is one where the models are having an argument: neural network says nah, but linear model says a gentle yes to high income. What-If… I want to do a quick deep dive into that point off the diagonal? I simply click on it and there’s the info. Turns out the linear model is right, this is a high income earner. Moreover, it’s a married woman who works 10 hours per week. I love how quickly I could see that.
+
+What’s this “visualize” thing on the left? Let’s see what happens if we try toggling the “counterfactual” setting.
+
+Aha! Here’s the nearest buddy where neural network changes its mind and correctly predicts a large salary. And it is a buddy indeed: this is a male executive who works 45 hours a week. What-If… we do a deep dive and see which of these differences the models are most sensitive to?
+
+Looking at the partial dependence plots, we can see that the neural network (blue) seems to expect pay to go up with hours worked, while the linear model (orange) slopes down. Curious. The statistician in me is shouting at all of us not to get excited — they’re probably both wrong in their own way, so we shouldn’t learn anything grand about the universe, but seeing how models react to inputs is very valuable for picking approaches to try next. Our mystery candidate’s lower hours worked look more compelling to the linear model (yeah, quiet down friends, obviously the economist in me is just as suspicious as the statistician). I bet we also want to take a quick look at other features here — how about gender…?
+
+Interestingly, the linear model (orange) is not getting itself too excited about gender, but the neural network (blue) seems more reactive to it. How about our mystery woman’s question-mark of an occupation? Could that be contributing to her lower score by the neural network?
+
+Whoa, while the linear model (orange) is stoic again, the neural network (blue) gives execs a pretty big prediction boost relative to those with missing occupation information. Now isn’t the time to say that snarky thing about linear models versus neural networks, is it? Well, maybe I’ll restrain myself… the whole point of the tool is to give you eyes on your data so you can iterate wisely, not let biases take you by surprise, and create a more awesome model faster. We’re not done yet! (But I sure have a few ideas I’m inspired to try next.)
+
+Learn more about our two model types here.
+
+What’s annoying about the What-If Tool?
+
+Work in progress
+
+The tool isn’t perfect yet. For example, you’ll occasionally stumble onto something guaranteed to earn a scowl from Tufte fans — for example, the screenshot below had me ranting in a meeting recently. (If you can’t see why, it’s a good opportunity for a little data viz lesson: Why are the text labels “Young” and “Not Young” the only visual cues? Why not shape? Because we’re working on making it better in this way and in others too, but perfection takes time. As part of the collaboration, I rant on your behalf to help these issues should dissipate rapidly.)
+
+Also… how about them axis labels?
+
+Unguided exploration
+
+The tool will go where your curiosity takes it, but what do you do if you’re not feeling creative? Perhaps you wish the tool were more prescriptive, guiding your eye towards what’s important? Your feedback is on our radar and we’re working on it, but for those who think something beautiful might be lost if your exploration gets hemmed in, never fear! We believe in options and understand that not everyone wants the prescriptive side of things, just as not everyone wants to play video games with a fixed storyline as opposed to an open world.
+
+Limited customization
+
+You want every customization under the sun, which is such a data-sciency thing to say. I’ve said things like that too — I remember the first question I asked in a mandatory SAS training for stats PhD students: “How do I write these functions myself so they do exactly what I want?”.
+
+So when you ask the same thing about the What-If Tool, I’ll tell you what my profs told me that day: that’s what raw Python and R are for! (Or, heaven help us, C/C++ if you’re going that far down into the weeds.) Visualization tools like the What-If Tool aren’t replacements, they’re accelerators. They give you a first look with minimal effort so you know where to dig, but once you’ve picked your spot, you’re probably going to want to write your own code to dig exactly the way you like to. If you’re an expert analyst with your own awesome way of doing things, our goal is to help you narrow your search so there’s less code to write later, not to replace your entire approach.
+
+TensorFlow-ish terminology
+
+Another thing that irritates me (and the rest of statistician-kind, I’m sure) is the terminology compromises we had to make for the sake of our TensorFlow user group, keeping some of the TensorFlow legacy lingo that makes traditional data scientists want to punch something. Yeah, that “inference” isn’t inference. TensorFlow is a hilarious bucket of words appropriated and promptly misused — fellow nerds, don’t even get me started on its use of “experiment”, “validation”, “estimator”, or the batch vs minibatch thing… Just let this be a lesson about thinking carefully about what you’re calling things when it’s just you and your buddies bouncing some ideas around in a garage. What if the project is a success and everyone will have to live with your choices? Sigh.
+
+Verdict
+
+All in all, these grumbles are on the petty side. Overall, I really like the What-If Tool and I hope you will too.
+
+See it in action!
+
+While the What-If Tool is not designed for novices (you need to know your way around the basics and it’s best if this isn’t your first rodeo with Python or notebooks), it’s an awesome accelerant for the practicing analyst and ML engineer.
+
+If you’re eager to see the What-If Tool in action, you don’t have to install anything — just go here. We’ve got dazzling demos and docs aplenty. If you want to start using it for realsies, you don’t even need to install TensorFlow. Simply pip install witwidget.
+
+If you’re a fan of Google Cloud Platform, you might be excited by a new integration that just got announced. Now you can connect your AI Platform model to the What-If Tool with just one method call! Check out how here.
+
+Thanks for reading! How about an AI course?
+
+If you had fun here and you’re looking for an applied AI course designed to be fun for beginners and experts alike, here’s one I made for your amusement:
+
+Enjoy the entire course playlist here: bit.ly/machinefriend
+
+Liked the author? Connect with Cassie Kozyrkov
+
+Let’s be friends! You can find me on Twitter, YouTube, Substack, and LinkedIn. Interested in having me speak at your event? Use this form to get in touch.","About the What-If Tool
+
+The What-If Tool is for speedy machine learning analytics, built to accelerate iterative model development and training. What’s awesome about the What-If Tool? Now you can connect your AI Platform model to the What-If Tool with just one method call!"
