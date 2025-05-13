@@ -71,7 +71,7 @@ The final app provides quick and coherent summaries, demonstrating the effective
 
 ---
 
-## 🧑‍💻 About Me
+## About Me
 
 I’m a solo developer passionate about AI, Data Science, and building tools that make life easier. This project marks a solid step forward in my journey into the world of Machine Learning and NLP.
 
